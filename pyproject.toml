@@ -1,0 +1,7 @@
+[project]
+name = "pascal-part-hss"
+version = "0.1.0"
+description = "Experiments with pascal part hierarcical semantic segmentation."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
