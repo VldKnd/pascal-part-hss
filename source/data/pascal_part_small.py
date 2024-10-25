@@ -4,12 +4,13 @@ import os
 import numpy
 import PIL.Image
 import torch.utils.data
+import torchvision.transforms.functional
 
 import source.constants
 
 LOGGER = logging.getLogger(__name__)
 
-class PascalPartDataset(torch.utils.data.Dataset):
+class PascalPartSmallDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         root: str = f"{source.constants.REPOSITORY_ROOT}/data",
@@ -45,7 +46,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
         self.class_to_name = {}
         self.name_to_class = {}
 
-        with open(f"{self.dataset_path}/classes.txt") as file_with_classes:
+        with open(f"{self.dataset_path}/classes.txt", "r") as file_with_classes:
             for line in file_with_classes.readlines():
                 _class, name = line.split(":")
                 _class, name = _class.strip(), name.strip()
@@ -55,8 +56,8 @@ class PascalPartDataset(torch.utils.data.Dataset):
         with open(
             f"{self.dataset_path}/train_id.txt" if train
             else f"{self.dataset_path}/val_id.txt"
-        ) as file:
-            self.file_ids = file.read().splitlines()
+        , "r") as file:
+            self.file_ids = file.read().splitlines()[:100]
         
         self.transform = transform
         self.target_transform = target_transform
@@ -85,15 +86,17 @@ class PascalPartDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         file_index = self.file_ids[index]
         image = PIL.Image.open(f"{self.path_to_images}/{file_index}.jpg")
-        mask = numpy.load(f"{self.path_to_masks}/{file_index}.npy")
+        mask_as_numpy_array = numpy.load(f"{self.path_to_masks}/{file_index}.npy")
+        image_as_tensor = torchvision.transforms.functional.pil_to_tensor(image)
+        mask_as_tensor = torch.from_numpy(mask_as_numpy_array)
 
         if self.transform:
-            image = self.transform(image)
+            image_as_tensor = self.transform(image_as_tensor)
 
         if self.target_transform:
-            mask = self.target_transform(mask)
+            mask_as_tensor = self.target_transform(mask_as_tensor)
 
-        return image, mask
+        return image_as_tensor, mask_as_tensor
 
     def __len__(self):
         return len(self.file_ids)
