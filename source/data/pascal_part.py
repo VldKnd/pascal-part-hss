@@ -12,12 +12,13 @@ import source.constants
 
 LOGGER = logging.getLogger(__name__)
 
+
 class PascalPartDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         root: str = f"{source.constants.REPOSITORY_ROOT}/data",
-        transform = None,
-        target_transform = None,
+        transform=None,
+        target_transform=None,
         train: bool = True,
     ):
         """
@@ -56,11 +57,15 @@ class PascalPartDataset(torch.utils.data.Dataset):
                 self.name_to_class[name] = int(_class)
 
         with open(
-            f"{self.dataset_path}/train_id.txt" if train
-            else f"{self.dataset_path}/val_id.txt"
-        , "r") as file:
+            (
+                f"{self.dataset_path}/train_id.txt"
+                if train
+                else f"{self.dataset_path}/val_id.txt"
+            ),
+            "r",
+        ) as file:
             self.file_ids = file.read().splitlines()
-        
+
         self.transform = transform
         self.target_transform = target_transform
 
@@ -69,33 +74,43 @@ class PascalPartDataset(torch.utils.data.Dataset):
         if not os.path.exists(dataset_path):
             raise RuntimeError(
                 "Pascal-part dataset folder is not found.",
-                "You should download it and put it in $ROOT/data folder"
+                "You should download it and put it in $ROOT/data folder",
             )
-        
-        if not all(
-            (os.path.exists(f"{dataset_path}/gt_masks"),
-            os.path.exists(f"{dataset_path}/JPEGImages"),
-            os.path.exists(f"{dataset_path}/classes.txt"),
-            os.path.exists(f"{dataset_path}/train_id.txt"),
-            os.path.exists(f"{dataset_path}/val_id.txt"),
+
+        if (
+            not all(
+                (
+                    os.path.exists(f"{dataset_path}/gt_masks"),
+                    os.path.exists(f"{dataset_path}/JPEGImages"),
+                    os.path.exists(f"{dataset_path}/classes.txt"),
+                    os.path.exists(f"{dataset_path}/train_id.txt"),
+                    os.path.exists(f"{dataset_path}/val_id.txt"),
+                )
             )
-        )  and not self.download:
+            and not self.download
+        ):
             raise RuntimeError(
                 "Pascal-part dataset is downloaded but not consistent.",
-                "You should download it again and put it in $ROOT/data folder"
+                "You should download it again and put it in $ROOT/data folder",
             )
         else:
-            LOGGER.info("Dataset not found, downloading it into $REPOSITORY_ROOT/data folder.")
+            LOGGER.info(
+                "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
+            )
             os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
             gdown.download(
                 "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
-                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
             )
             LOGGER.info("Dataset downloaded. Unzipping it.")
-            with zipfile.ZipFile(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", 'r') as archive:
-                archive.extractall(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part")
+            with zipfile.ZipFile(
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
+            ) as archive:
+                archive.extractall(
+                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
+                )
             LOGGER.info("Extracting finished.")
-            
+
     def __getitem__(self, index):
         file_index = self.file_ids[index]
         image = PIL.Image.open(f"{self.path_to_images}/{file_index}.jpg")
@@ -119,8 +134,8 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         root: str = f"{source.constants.REPOSITORY_ROOT}/data",
-        transform = None,
-        target_transform = None,
+        transform=None,
+        target_transform=None,
         train: bool = True,
         download: bool = False,
     ):
@@ -161,11 +176,15 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 self.name_to_class[name] = int(_class)
 
         with open(
-            f"{self.dataset_path}/train_id.txt" if train
-            else f"{self.dataset_path}/val_id.txt"
-        , "r") as file:
+            (
+                f"{self.dataset_path}/train_id.txt"
+                if train
+                else f"{self.dataset_path}/val_id.txt"
+            ),
+            "r",
+        ) as file:
             self.file_ids = file.read().splitlines()
-        
+
         self.transform = transform
         self.target_transform = target_transform
 
@@ -174,31 +193,41 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
         if not os.path.exists(dataset_path):
             raise RuntimeError(
                 "Pascal-part dataset folder is not found.",
-                "You should download it and put it in $ROOT/data folder"
+                "You should download it and put it in $ROOT/data folder",
             )
-        
-        if not all(
-            (os.path.exists(f"{dataset_path}/gt_masks"),
-            os.path.exists(f"{dataset_path}/JPEGImages"),
-            os.path.exists(f"{dataset_path}/classes.txt"),
-            os.path.exists(f"{dataset_path}/train_id.txt"),
-            os.path.exists(f"{dataset_path}/val_id.txt"),
+
+        if (
+            not all(
+                (
+                    os.path.exists(f"{dataset_path}/gt_masks"),
+                    os.path.exists(f"{dataset_path}/JPEGImages"),
+                    os.path.exists(f"{dataset_path}/classes.txt"),
+                    os.path.exists(f"{dataset_path}/train_id.txt"),
+                    os.path.exists(f"{dataset_path}/val_id.txt"),
+                )
             )
-        )  and not self.download:
+            and not self.download
+        ):
             raise RuntimeError(
                 "Pascal-part dataset is downloaded but not consistent.",
-                "You should download it again and put it in $ROOT/data folder"
+                "You should download it again and put it in $ROOT/data folder",
             )
         else:
-            LOGGER.info("Dataset not found, downloading it into $REPOSITORY_ROOT/data folder.")
+            LOGGER.info(
+                "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
+            )
             os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
             gdown.download(
                 "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
-                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
             )
             LOGGER.info("Dataset downloaded. Unzipping it.")
-            with zipfile.ZipFile(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", 'r') as archive:
-                archive.extractall(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part")
+            with zipfile.ZipFile(
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
+            ) as archive:
+                archive.extractall(
+                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
+                )
             LOGGER.info("Extracting finished.")
 
     def __getitem__(self, index):
@@ -214,8 +243,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
 
         if grayscale_flag > 0.95:
             image_as_tensor = torchvision.transforms.functional.rgb_to_grayscale(
-                image_as_tensor,
-                num_output_channels=3
+                image_as_tensor, num_output_channels=3
             )
 
         if flip_flag > 0.5:
@@ -224,19 +252,19 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 mask_as_tensor.unsqueeze(0)
             )
 
-        if distortion_flag > 0. and distortion_flag < 0.25:
-            image_as_tensor = torchvision.transforms.functional.equalize(image_as_tensor)
+        if distortion_flag > 0.0 and distortion_flag < 0.25:
+            image_as_tensor = torchvision.transforms.functional.equalize(
+                image_as_tensor
+            )
         elif distortion_flag > 0.25 and distortion_flag < 0.5:
             image_as_tensor = torchvision.transforms.functional.adjust_saturation(
-                image_as_tensor,
-                saturation_factor=0.5
+                image_as_tensor, saturation_factor=0.5
             )
         elif distortion_flag > 0.5 and distortion_flag < 0.75:
             image_as_tensor = torchvision.transforms.functional.adjust_saturation(
-                image_as_tensor,
-                saturation_factor=2
+                image_as_tensor, saturation_factor=2
             )
-        
+
         if self.transform:
             image_as_tensor = self.transform(image_as_tensor)
 

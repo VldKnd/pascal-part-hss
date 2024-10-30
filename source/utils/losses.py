@@ -5,7 +5,7 @@ import torch.nn
 
 
 class FocalLoss(torch.nn.Module):
-    """ Focal Loss, as described in https://arxiv.org/abs/1708.02002.
+    """Focal Loss, as described in https://arxiv.org/abs/1708.02002.
 
     It is essentially an enhancement to cross entropy loss and is
     useful for classification tasks when there is a large class imbalance.
@@ -17,11 +17,13 @@ class FocalLoss(torch.nn.Module):
         - y: (batch_size,) or (batch_size, d1, d2, ..., dK), K > 0.
     """
 
-    def __init__(self,
-                 alpha: Optional[torch.Tensor] = None,
-                 gamma: float = 0.,
-                 reduction: str = 'mean',
-                 ignore_index: int = -100):
+    def __init__(
+        self,
+        alpha: Optional[torch.Tensor] = None,
+        gamma: float = 0.0,
+        reduction: str = "mean",
+        ignore_index: int = -100,
+    ):
         """Constructor.
 
         Args:
@@ -33,9 +35,8 @@ class FocalLoss(torch.nn.Module):
             ignore_index (int, optional): class label to ignore.
                 Defaults to -100.
         """
-        if reduction not in ('mean', 'sum', 'none'):
-            raise ValueError(
-                'Reduction must be one of: "mean", "sum", "none".')
+        if reduction not in ("mean", "sum", "none"):
+            raise ValueError('Reduction must be one of: "mean", "sum", "none".')
 
         super().__init__()
         self.alpha = alpha
@@ -44,14 +45,15 @@ class FocalLoss(torch.nn.Module):
         self.reduction = reduction
 
         self.nll_loss = torch.nn.NLLLoss(
-            weight=alpha, reduction='none', ignore_index=ignore_index)
+            weight=alpha, reduction="none", ignore_index=ignore_index
+        )
 
     def __repr__(self):
-        arg_keys = ['alpha', 'gamma', 'ignore_index', 'reduction']
+        arg_keys = ["alpha", "gamma", "ignore_index", "reduction"]
         arg_vals = [self.__dict__[k] for k in arg_keys]
-        arg_strs = [f'{k}={v!r}' for k, v in zip(arg_keys, arg_vals)]
-        arg_str = ', '.join(arg_strs)
-        return f'{type(self).__name__}({arg_str})'
+        arg_strs = [f"{k}={v!r}" for k, v in zip(arg_keys, arg_vals)]
+        arg_str = ", ".join(arg_strs)
+        return f"{type(self).__name__}({arg_str})"
 
     def forward(self, x: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         if x.ndim > 2:
@@ -64,7 +66,7 @@ class FocalLoss(torch.nn.Module):
         unignored_mask = y != self.ignore_index
         y = y[unignored_mask]
         if len(y) == 0:
-            return torch.tensor(0.)
+            return torch.tensor(0.0)
         x = x[unignored_mask]
 
         # compute weighted cross entropy term: -alpha * log(pt)
@@ -78,14 +80,14 @@ class FocalLoss(torch.nn.Module):
 
         # compute focal term: (1 - pt)^gamma
         pt = log_pt.exp()
-        focal_term = (1 - pt)**self.gamma
+        focal_term = (1 - pt) ** self.gamma
 
         # the full loss: -alpha * ((1 - pt)^gamma) * log(pt)
         loss = focal_term * ce
 
-        if self.reduction == 'mean':
+        if self.reduction == "mean":
             loss = loss.mean()
-        elif self.reduction == 'sum':
+        elif self.reduction == "sum":
             loss = loss.sum()
 
         return loss

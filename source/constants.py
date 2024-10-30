@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def find_repository_root(start_point_absolute_path: str) -> str:
     repository_root = Path(start_point_absolute_path).resolve().parent
     while not (repository_root / ".git").exists():

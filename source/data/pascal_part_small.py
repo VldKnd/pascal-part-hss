@@ -10,12 +10,13 @@ import source.constants
 
 LOGGER = logging.getLogger(__name__)
 
+
 class PascalPartSmallDataset(torch.utils.data.Dataset):
     def __init__(
         self,
         root: str = f"{source.constants.REPOSITORY_ROOT}/data",
-        transform = None,
-        target_transform = None,
+        transform=None,
+        target_transform=None,
         train: bool = True,
     ):
         """
@@ -54,11 +55,15 @@ class PascalPartSmallDataset(torch.utils.data.Dataset):
                 self.name_to_class[name] = int(_class)
 
         with open(
-            f"{self.dataset_path}/train_id.txt" if train
-            else f"{self.dataset_path}/val_id.txt"
-        , "r") as file:
+            (
+                f"{self.dataset_path}/train_id.txt"
+                if train
+                else f"{self.dataset_path}/val_id.txt"
+            ),
+            "r",
+        ) as file:
             self.file_ids = file.read().splitlines()[:10]
-        
+
         self.transform = transform
         self.target_transform = target_transform
 
@@ -67,22 +72,23 @@ class PascalPartSmallDataset(torch.utils.data.Dataset):
         if not os.path.exists(dataset_path):
             raise RuntimeError(
                 "Pascal-part dataset folder is not found.",
-                "You should download it and put it in $ROOT/data folder"
+                "You should download it and put it in $ROOT/data folder",
             )
-        
+
         if not all(
-            (os.path.exists(f"{dataset_path}/gt_masks"),
-            os.path.exists(f"{dataset_path}/JPEGImages"),
-            os.path.exists(f"{dataset_path}/classes.txt"),
-            os.path.exists(f"{dataset_path}/train_id.txt"),
-            os.path.exists(f"{dataset_path}/val_id.txt"),
+            (
+                os.path.exists(f"{dataset_path}/gt_masks"),
+                os.path.exists(f"{dataset_path}/JPEGImages"),
+                os.path.exists(f"{dataset_path}/classes.txt"),
+                os.path.exists(f"{dataset_path}/train_id.txt"),
+                os.path.exists(f"{dataset_path}/val_id.txt"),
             )
         ):
             raise RuntimeError(
                 "Pascal-part dataset is downloaded but not consistent.",
-                "You should download it again and put it in $ROOT/data folder"
+                "You should download it again and put it in $ROOT/data folder",
             )
-            
+
     def __getitem__(self, index):
         file_index = self.file_ids[index]
         image = PIL.Image.open(f"{self.path_to_images}/{file_index}.jpg")
