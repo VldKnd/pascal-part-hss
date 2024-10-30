@@ -4,7 +4,6 @@
 <br>
 Все команды должны быть выполнены из корня репозитория.
 <br>
-<pre>
 
 **Venv**
 
@@ -22,7 +21,6 @@ source .venv/bin/activate
 ```bash
 pip install .
 ```
-</pre>
 </details>
 
 ## Структура репозитория
