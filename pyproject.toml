@@ -6,10 +6,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "ipykernel>=6.29.5",
-    "matplotlib>=3.9.2",
+    "matplotlib",
     "numpy>=1.26.4",
     "torch>=2.0.0",
     "torchvision>=0.15.1",
+    "transformers"
 ]
 
 [tool.hatch.build.targets.wheel]
