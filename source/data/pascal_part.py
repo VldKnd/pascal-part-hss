@@ -1,6 +1,8 @@
 import logging
 import os
+import zipfile
 
+import gdown
 import numpy
 import PIL.Image
 import torch.utils.data
@@ -38,7 +40,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
                 ├── (3) low_leg
                 └── (5) up_leg
         """
-        self.check_dataset_consistancy(path_to_data_folder=root)
+        self.check_dataset_consistancy_and_download(path_to_data_folder=root)
         self.root = root
         self.dataset_path = f"{self.root}/Pascal-part"
         self.path_to_masks = f"{self.dataset_path}/gt_masks"
@@ -62,7 +64,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
-    def check_dataset_consistancy(self, path_to_data_folder: str):
+    def check_dataset_consistancy_and_download(self, path_to_data_folder: str):
         dataset_path = f"{path_to_data_folder}/Pascal-part"
         if not os.path.exists(dataset_path):
             raise RuntimeError(
@@ -77,11 +79,22 @@ class PascalPartDataset(torch.utils.data.Dataset):
             os.path.exists(f"{dataset_path}/train_id.txt"),
             os.path.exists(f"{dataset_path}/val_id.txt"),
             )
-        ):
+        )  and not self.download:
             raise RuntimeError(
                 "Pascal-part dataset is downloaded but not consistent.",
                 "You should download it again and put it in $ROOT/data folder"
             )
+        else:
+            LOGGER.info("Dataset not found, downloading it into $REPOSITORY_ROOT/data folder.")
+            os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
+            gdown.download(
+                "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"
+            )
+            LOGGER.info("Dataset downloaded. Unzipping it.")
+            with zipfile.ZipFile(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", 'r') as archive:
+                archive.extractall(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part")
+            LOGGER.info("Extracting finished.")
             
     def __getitem__(self, index):
         file_index = self.file_ids[index]
@@ -109,6 +122,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
         transform = None,
         target_transform = None,
         train: bool = True,
+        download: bool = False,
     ):
         """
         Датасет Pascal-part со случайным зеркальным отражением и имзенением засветления изображений.
@@ -130,13 +144,14 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 ├── (3) low_leg
                 └── (5) up_leg
         """
-        self.check_dataset_consistancy(path_to_data_folder=root)
+        self.check_dataset_consistancy_and_download(path_to_data_folder=root)
         self.root = root
         self.dataset_path = f"{self.root}/Pascal-part"
         self.path_to_masks = f"{self.dataset_path}/gt_masks"
         self.path_to_images = f"{self.dataset_path}/JPEGImages"
         self.class_to_name = {}
         self.name_to_class = {}
+        self.download = download
 
         with open(f"{self.dataset_path}/classes.txt", "r") as file_with_classes:
             for line in file_with_classes.readlines():
@@ -154,7 +169,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
         self.transform = transform
         self.target_transform = target_transform
 
-    def check_dataset_consistancy(self, path_to_data_folder: str):
+    def check_dataset_consistancy_and_download(self, path_to_data_folder: str):
         dataset_path = f"{path_to_data_folder}/Pascal-part"
         if not os.path.exists(dataset_path):
             raise RuntimeError(
@@ -169,12 +184,23 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
             os.path.exists(f"{dataset_path}/train_id.txt"),
             os.path.exists(f"{dataset_path}/val_id.txt"),
             )
-        ):
+        )  and not self.download:
             raise RuntimeError(
                 "Pascal-part dataset is downloaded but not consistent.",
                 "You should download it again and put it in $ROOT/data folder"
             )
-            
+        else:
+            LOGGER.info("Dataset not found, downloading it into $REPOSITORY_ROOT/data folder.")
+            os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
+            gdown.download(
+                "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
+                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"
+            )
+            LOGGER.info("Dataset downloaded. Unzipping it.")
+            with zipfile.ZipFile(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", 'r') as archive:
+                archive.extractall(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part")
+            LOGGER.info("Extracting finished.")
+
     def __getitem__(self, index):
         file_index = self.file_ids[index]
         image = PIL.Image.open(f"{self.path_to_images}/{file_index}.jpg")
@@ -207,7 +233,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
             )
         elif distortion_flag > 0.5 and distortion_flag < 0.75:
             image_as_tensor = torchvision.transforms.functional.adjust_saturation(
-                image_as_tensor, 
+                image_as_tensor,
                 saturation_factor=2
             )
         

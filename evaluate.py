@@ -1,6 +1,9 @@
+import logging
+import os
 from ctypes import ArgumentError
 from typing import Any
 
+import gdown
 import torch
 import torch.hub
 import torch.optim
@@ -17,8 +20,31 @@ import source.utils
 
 _  = torch.manual_seed(0)
 
-ALLOWED_DEVICES = ['cuda', 'cpu']
-ALLOWED_MODELS = ['resnet50', 'resnet101', 'deeplabv3', 'segformer', 'resnet101_weighted_loss']
+
+LOGGER = logging.getLogger(__name__)
+PATH_TO_CHECKPOINTS = f"{source.constants.REPOSITORY_ROOT}/checkpoints"
+PATH_TO_DATA = f"{source.constants.REPOSITORY_ROOT}/data"
+
+ALLOWED_DEVICES = {
+    'cuda',
+    'cpu'
+}
+
+ALLOWED_MODELS = {
+    'resnet50',
+    'resnet101',
+    'deeplabv3',
+    'segformer',
+    'resnet101_long'
+}
+
+MODEL_TO_WEIGHTS_LINKS = {
+    'resnet50':"https://drive.google.com/file/d/16mAgAtS8qdks_XYzuCRAjF7vcBEpWi1H",
+    'resnet101':"https://drive.google.com/file/d/1nt1IRujzH_dowIUMQudwopzgBL708nkO",
+    'deeplabv3':"https://drive.google.com/file/d/1r2i0tAIMzKB0sgNJcAG5zCn6ZMLtKA1s",
+    'segformer':"https://drive.google.com/file/d/1ayjtJxx3zDnTJ97ipwdFzV5YKGwvtkX9",
+    'resnet101_long':"https://drive.google.com/file/d/19f1S7_YUEUQ3LRERXj85S7tjPeoeouGE",
+}
 
 def parse_args() -> dict[str, Any]:
     return {
@@ -33,17 +59,32 @@ def validate_args(args_as_dict: dict[str, Any]):
     if args_as_dict.get('model_type', 'resnet101') not in ALLOWED_MODELS:
         raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
     
+def check_and_download_models_weights(model_type: str = 'resnet101'):
+    if model_type not in MODEL_TO_WEIGHTS_LINKS:
+        raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
+    
+    path_to_model_weights = f"{PATH_TO_CHECKPOINTS}/{model_type}.pth"
+    if not os.path.exists(path_to_model_weights):
+        LOGGER.info(f"Downloading {model_type} weights from gdrive.")
+        gdown.download(MODEL_TO_WEIGHTS_LINKS[model_type], path_to_model_weights)
+        LOGGER.info(f"Weights succesfuly downloaded.")
+
+    return path_to_model_weights
+
 def get_model_and_transform(model_type: str = 'resnet101'):
-    if model_type == 'resnet50':
-        weight_name = 'augmented_resnet50_schedule_5000_resize_336_448'
-        path_to_checkpoint = (
-            f'{source.constants.REPOSITORY_ROOT}/' +
-            'checkpoints/' + 
-            weight_name
+
+    path_to_checkpoint = (
+        (
+            f'{source.constants.REPOSITORY_ROOT}/'
+            'checkpoints/'
+            f'{model_type}.pth'
         )
-        checkpoint = torch.load(path_to_checkpoint)
+    )
+    model_weights = torch.load(path_to_checkpoint)['model']
+    
+    if model_type == 'resnet50':
         model = torchvision.models.segmentation.fcn_resnet50()
-        model.load_state_dict(checkpoint['model'])
+        model.load_state_dict(model_weights)
         transforms = torchvision.transforms.Compose(
             [
             torchvision.transforms.ToPILImage(),
@@ -54,15 +95,8 @@ def get_model_and_transform(model_type: str = 'resnet101'):
         ])
 
     elif model_type == 'resnet101':
-        weight_name = 'augmented_resnet101_schedule_5000_resize_336_448'
-        path_to_checkpoint = (
-            f'{source.constants.REPOSITORY_ROOT}/' +
-            'checkpoints/' + 
-            weight_name
-        )
-        checkpoint = torch.load(path_to_checkpoint)
         model = torchvision.models.segmentation.fcn_resnet101()
-        model.load_state_dict(checkpoint['model'])
+        model.load_state_dict(model_weights)
         transforms = torchvision.transforms.Compose(
             [
             torchvision.transforms.ToPILImage(),
@@ -71,18 +105,10 @@ def get_model_and_transform(model_type: str = 'resnet101'):
             torchvision.transforms.Lambda(lambda image_as_int_tensor: image_as_int_tensor / 255.),
             torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
-
 
     elif model_type == 'deeplabv3':
-        weight_name = 'augmented_deeplabv3_schedule_5000_resize_336_448'
-        path_to_checkpoint = (
-            f'{source.constants.REPOSITORY_ROOT}/' +
-            'checkpoints/' + 
-            weight_name
-        )
-        checkpoint = torch.load(path_to_checkpoint)
         model = torch.hub.load('pytorch/vision:v0.10.0', 'deeplabv3_resnet50')
-        model.load_state_dict(checkpoint['model'])
+        model.load_state_dict(model_weights)
         transforms = torchvision.transforms.Compose(
             [
             torchvision.transforms.ToPILImage(),
@@ -91,21 +117,10 @@ def get_model_and_transform(model_type: str = 'resnet101'):
             torchvision.transforms.Lambda(lambda image_as_int_tensor: image_as_int_tensor / 255.),
             torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
-
 
     elif model_type == 'segformer':
-        weight_name = 'augmented_segformer_schedule_5000_resize_336_448'
-        path_to_checkpoint = (
-            f'{source.constants.REPOSITORY_ROOT}/' +
-            'checkpoints/' + 
-            weight_name
-        )
-        checkpoint = torch.load(path_to_checkpoint)
-        model = transformers.SegformerForSemanticSegmentation.from_pretrained(
-            "nvidia/segformer-b2-finetuned-ade-512-512"
-        )
-        
-        model.load_state_dict(checkpoint['model'])
+        model = transformers.SegformerForSemanticSegmentation.from_pretrained("nvidia/segformer-b2-finetuned-ade-512-512")
+        model.load_state_dict(model_weights)
 
         transforms = torchvision.transforms.Compose(
             [
@@ -116,8 +131,17 @@ def get_model_and_transform(model_type: str = 'resnet101'):
             torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
         ])
 
-
-    elif model_type == 'resnet101_weighted_loss':
+    elif model_type == 'resnet101_long':
+        model = torchvision.models.segmentation.fcn_resnet101()
+        model.load_state_dict(model_weights)
+        transforms = torchvision.transforms.Compose(
+            [
+            torchvision.transforms.ToPILImage(),
+            torchvision.transforms.Resize((336, 448)),
+            torchvision.transforms.PILToTensor(),
+            torchvision.transforms.Lambda(lambda image_as_int_tensor: image_as_int_tensor / 255.),
+            torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+        ])
 
     else:
         raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
@@ -134,35 +158,19 @@ if __name__ == '__main__':
     cpu_device = torch.device('cpu')
     device = torch.device(device_to_use)
 
+    check_and_download_models_weights(model_type=model_type)
+
     with torch.no_grad():
-        
-        if model_type == 'resnet50':
-            weight_name = 'augmented_resnet50_schedule_5000_resize_336_448'
-            path_to_checkpoint = (
-                f'{source.constants.REPOSITORY_ROOT}/' +
-                'checkpoints/' + 
-                weight_name
-            )
-            checkpoint = torch.load(path_to_checkpoint)
-            model = torchvision.models.segmentation.fcn_resnet50()
-            model.load_state_dict(checkpoint['model'])
 
-            image_transform = image_transform = torchvision.transforms.Compose(
-                [
-                torchvision.transforms.ToPILImage(),
-                torchvision.transforms.Resize((336, 448)),
-                torchvision.transforms.PILToTensor(),
-                torchvision.transforms.Lambda(lambda image_as_int_tensor: image_as_int_tensor / 255.),
-                torchvision.transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-            ])
+        model, image_transforms = get_model_and_transform(
+            model_type=model_type
+        )
 
-            evaluation_dataset = source.data.PascalPartDataset(
-                transform=image_transform,
-                train=False,
-            )
-            _ = model.eval()
-        else:
-            raise RuntimeError()
+        evaluation_dataset = source.data.PascalPartDataset(
+            transform=image_transforms,
+            train=False,
+        )
+        _ = model.eval()
         
         
         evaluation_metrics_tracker = {index:[] for index in range(0, 10)}
@@ -200,7 +208,7 @@ if __name__ == '__main__':
                 if filtered_iou.numel():
                     evaluation_metrics_tracker[object_class].append(filtered_iou.mean().item())
 
-        print(
+        LOGGER.info(
             "IoU - ",
             *[
                 f"{evaluation_dataset.class_to_name[object_class]} : " +
