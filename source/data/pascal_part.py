@@ -20,6 +20,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
         transform=None,
         target_transform=None,
         train: bool = True,
+        download: bool = True,
     ):
         """
         Датасет Pascal-part.
@@ -48,6 +49,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
         self.path_to_images = f"{self.dataset_path}/JPEGImages"
         self.class_to_name = {}
         self.name_to_class = {}
+        self.download = download
 
         with open(f"{self.dataset_path}/classes.txt", "r") as file_with_classes:
             for line in file_with_classes.readlines():
@@ -94,7 +96,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
                 "You should download it again and put it in $ROOT/data folder",
             )
         else:
-            LOGGER.info(
+            LOGGER.debug(
                 "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
             )
             os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
@@ -102,14 +104,14 @@ class PascalPartDataset(torch.utils.data.Dataset):
                 "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
             )
-            LOGGER.info("Dataset downloaded. Unzipping it.")
+            LOGGER.debug("Dataset downloaded. Unzipping it.")
             with zipfile.ZipFile(
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
             ) as archive:
                 archive.extractall(
                     f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
                 )
-            LOGGER.info("Extracting finished.")
+            LOGGER.debug("Extracting finished.")
 
     def __getitem__(self, index):
         file_index = self.file_ids[index]
@@ -213,7 +215,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 "You should download it again and put it in $ROOT/data folder",
             )
         else:
-            LOGGER.info(
+            LOGGER.debug(
                 "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
             )
             os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
@@ -221,14 +223,14 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
             )
-            LOGGER.info("Dataset downloaded. Unzipping it.")
+            LOGGER.debug("Dataset downloaded. Unzipping it.")
             with zipfile.ZipFile(
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
             ) as archive:
                 archive.extractall(
                     f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
                 )
-            LOGGER.info("Extracting finished.")
+            LOGGER.debug("Extracting finished.")
 
     def __getitem__(self, index):
         file_index = self.file_ids[index]

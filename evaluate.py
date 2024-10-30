@@ -1,3 +1,4 @@
+import argparse
 import logging
 import os
 from ctypes import ArgumentError
@@ -39,10 +40,35 @@ MODEL_TO_WEIGHTS_LINKS = {
 
 
 def parse_args() -> dict[str, Any]:
-    return {
-        device_to_use: "cuda",
-        model_type: "resnet50",
-    }
+    parser = argparse.ArgumentParser(
+        description="Evaluating pretrained model on test part of Pascal-parts"
+    )
+    parser.add_argument(
+        "--device_to_use",
+        choices=["cpu", "cuda"],
+        type=str,
+        help="On which device to run inference.",
+        default="cpu",
+    )
+
+    parser.add_argument(
+        "--model_type",
+        choices=["resnet50", "resnet101", "deeplabv3", "segformer", "resnet101_long"],
+        type=str,
+        help="Which pre-trained model to use.",
+        default="reset50",
+    )
+
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        action="store_true",
+        help="Wether to show additional information or not.",
+    )
+
+    args = parser.parse_args()
+
+    return args.__dict__
 
 
 def validate_args(args_as_dict: dict[str, Any]):
@@ -61,15 +87,14 @@ def check_and_download_models_weights(model_type: str = "resnet101"):
 
     path_to_model_weights = f"{PATH_TO_CHECKPOINTS}/{model_type}.pth"
     if not os.path.exists(path_to_model_weights):
-        LOGGER.info(f"Downloading {model_type} weights from gdrive.")
+        LOGGER.debug(f"Downloading {model_type} weights from gdrive.")
         gdown.download(MODEL_TO_WEIGHTS_LINKS[model_type], path_to_model_weights)
-        LOGGER.info(f"Weights succesfuly downloaded.")
+        LOGGER.debug(f"Weights succesfuly downloaded.")
 
     return path_to_model_weights
 
 
 def get_model_and_transform(model_type: str = "resnet101"):
-
     path_to_checkpoint = (
         f"{source.constants.REPOSITORY_ROOT}/" "checkpoints/" f"{model_type}.pth"
     )
@@ -169,12 +194,44 @@ def get_model_and_transform(model_type: str = "resnet101"):
     return model, transforms
 
 
+def get_model_logits(
+    image_batch: torch.Tensor, model: torch.nn.Sequential
+) -> torch.Tensor:
+    if model_type == "resnet50":
+        logits = model(image_batch)
+
+    elif model_type == "resnet101":
+        logits = model(image_batch)
+
+    elif model_type == "deeplabv3":
+        logits = model(image_batch)["out"]
+
+    elif model_type == "segformer":
+        logits = model(image_batch).logits
+
+    elif model_type == "resnet101_long":
+        logits = model(image_batch)
+
+    else:
+        raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
+
+    return logits
+
+
 if __name__ == "__main__":
     args_as_dict = parse_args()
     validate_args(args_as_dict)
 
     device_to_use = args_as_dict["device_to_use"]
     model_type = args_as_dict["model_type"]
+    verbose = args_as_dict["verbose"]
+
+    logger_level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        format="[%(levelname)s] %(message)s",
+        level=logger_level,
+    )
+    LOGGER.setLevel(logger_level)
 
     cpu_device = torch.device("cpu")
     device = torch.device(device_to_use)
@@ -201,7 +258,7 @@ if __name__ == "__main__":
             image = image.unsqueeze(0)
             mask = mask.unsqueeze(0)
 
-            output_logits = model(image).logits
+            output_logits = get_model_logits(image, model).logits
 
             log_probabilities = torch.nn.functional.log_softmax(
                 output_logits,
