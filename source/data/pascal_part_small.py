@@ -57,7 +57,7 @@ class PascalPartSmallDataset(torch.utils.data.Dataset):
             f"{self.dataset_path}/train_id.txt" if train
             else f"{self.dataset_path}/val_id.txt"
         , "r") as file:
-            self.file_ids = file.read().splitlines()[:100]
+            self.file_ids = file.read().splitlines()[:10]
         
         self.transform = transform
         self.target_transform = target_transform
