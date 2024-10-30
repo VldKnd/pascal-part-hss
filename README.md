@@ -1,7 +1,11 @@
 # pascal-part-hss
 
-resnet50: bg : 0.938          low_hand : 0.400        torso : 0.578   low_leg : 0.334         head : 0.712    up_leg : 0.389          up_hand : 0.452         upper_body: 0.320       lower_body: 0.439       body: 0.725
-resnet101_100_epochs: bg : 0.941          low_hand : 0.416        torso : 0.585   low_leg : 0.339         head : 0.715    up_leg : 0.385          up_hand : 0.471         upper_body: 0.316       lower_body: 0.431       body: 0.730 
-resnet101: bg : 0.941          low_hand : 0.416        torso : 0.585   low_leg : 0.339         head : 0.715    up_leg : 0.385          up_hand : 0.471         upper_body: 0.316       lower_body: 0.431       body: 0.730
-deeplabv3: bg : 0.937          low_hand : 0.398        torso : 0.575   low_leg : 0.335         head : 0.714    up_leg : 0.374          up_hand : 0.462         upper_body: 0.324       lower_body: 0.432       body: 0.729 
-segformer: bg: 0.941          low_hand : 0.285        torso : 0.511   low_leg : 0.194         head : 0.610    up_leg : 0.278          up_hand : 0.389         upper_body: 0.297       lower_body: 0.340       body: 0.735
+| Model Type           | Background | Low hand | Torso | Low leg | Head  | Up leg | Up hand | Upper body | Lower body | Body  |
+| -------------------- | ---------- | -------- | ----- | ------- | ----- | ------ | ------- | ---------- | ---------- | ----  |
+| resnet50             | 0.938      | 0.400    | 0.578 | 0.334   | 0.712 | 0.389  | 0.452   | 0.320      | 0.439      | 0.725 |
+| resnet101_100_epochs | 0.941      | 0.416    | 0.585 | 0.339   | 0.715 | 0.385  | 0.471   | 0.316      | 0.431      | 0.730 |
+| resnet101            | 0.941      | 0.416    | 0.585 | 0.339   | 0.715 | 0.385  | 0.471   | 0.316      | 0.431      | 0.730 |
+| deeplabv3            | 0.937      | 0.398    | 0.575 | 0.335   | 0.714 | 0.374  | 0.462   | 0.324      | 0.432      | 0.729 |
+| segformer            | 0.941      | 0.285    | 0.511 | 0.194   | 0.610 | 0.278  | 0.389   | 0.297      | 0.340      | 0.735 |
+| dino_backbone        | 0.759 	    | 0.018    | 0.108 | 0.009 	 | 0.092 | 0.021  | 0.030 	| -          | -          | -     |
+| -------------------- | ---------- | -------- | ----- | ------- | ----- | ------ | ------- | ---------- | ---------- | ----  |
