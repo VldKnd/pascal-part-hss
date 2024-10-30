@@ -32,7 +32,7 @@ ALLOWED_MODELS = {"resnet50", "resnet101", "deeplabv3", "segformer", "resnet101_
 
 MODEL_TO_WEIGHTS_LINKS = {
     "resnet50": "https://drive.google.com/uc?id=16mAgAtS8qdks_XYzuCRAjF7vcBEpWi1H",
-    "resnet101": "https://drive.google.com/uc?id=1oa8p7t6DQ9y2AyFdUZah1D2e52X7PEYs/view?usp=sharing",
+    "resnet101": "https://drive.google.com/uc?id=1oa8p7t6DQ9y2AyFdUZah1D2e52X7PEYs",
     "deeplabv3": "https://drive.google.com/uc?id=1r2i0tAIMzKB0sgNJcAG5zCn6ZMLtKA1s",
     "segformer": "https://drive.google.com/uc?id=1ayjtJxx3zDnTJ97ipwdFzV5YKGwvtkX9",
     "resnet101_long": "https://drive.google.com/uc?id=19f1S7_YUEUQ3LRERXj85S7tjPeoeouGE",
