@@ -93,6 +93,10 @@ def check_and_download_models_weights(model_type: str = "resnet101"):
 
     path_to_model_weights = f"{PATH_TO_CHECKPOINTS}/{model_type}.pth"
     if not os.path.exists(path_to_model_weights):
+        
+        if not os.path.exists(f"{PATH_TO_CHECKPOINTS}"):
+            os.mkdir(f"{PATH_TO_CHECKPOINTS}")
+        
         LOGGER.debug(f"Downloading {model_type} weights from gdrive.")
         gdown.download(MODEL_TO_WEIGHTS_LINKS[model_type], path_to_model_weights)
         LOGGER.debug(f"Weights succesfuly downloaded.")
