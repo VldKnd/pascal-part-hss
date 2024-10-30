@@ -42,6 +42,8 @@ class PascalPartDataset(torch.utils.data.Dataset):
                 ├── (3) low_leg
                 └── (5) up_leg
         """
+
+        self.download = download
         self.check_dataset_consistancy_and_download(path_to_data_folder=root)
         self.root = root
         self.dataset_path = f"{self.root}/Pascal-part"
@@ -49,8 +51,6 @@ class PascalPartDataset(torch.utils.data.Dataset):
         self.path_to_images = f"{self.dataset_path}/JPEGImages"
         self.class_to_name = {}
         self.name_to_class = {}
-        self.download = download
-
         with open(f"{self.dataset_path}/classes.txt", "r") as file_with_classes:
             for line in file_with_classes.readlines():
                 _class, name = line.split(":")
@@ -73,7 +73,7 @@ class PascalPartDataset(torch.utils.data.Dataset):
 
     def check_dataset_consistancy_and_download(self, path_to_data_folder: str):
         dataset_path = f"{path_to_data_folder}/Pascal-part"
-        if not os.path.exists(dataset_path):
+        if not os.path.exists(dataset_path) and not self.download:
             raise RuntimeError(
                 "Pascal-part dataset folder is not found.",
                 "You should download it and put it in $ROOT/data folder",
@@ -99,17 +99,23 @@ class PascalPartDataset(torch.utils.data.Dataset):
             LOGGER.debug(
                 "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
             )
-            os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
-            gdown.download(
-                "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
-                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
-            )
+
+            if not os.path.exists(f"{source.constants.REPOSITORY_ROOT}/data"):
+                os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")            
+
+            if not os.path.exists(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"):
+                LOGGER.debug("Downloading zipped archive.")
+                gdown.download(
+                    "https://drive.google.com/uc?id=1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
+                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
+                )
+            
             LOGGER.debug("Dataset downloaded. Unzipping it.")
             with zipfile.ZipFile(
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
             ) as archive:
                 archive.extractall(
-                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
+                    f"{source.constants.REPOSITORY_ROOT}/data"
                 )
             LOGGER.debug("Extracting finished.")
 
@@ -161,6 +167,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
                 ├── (3) low_leg
                 └── (5) up_leg
         """
+        self.download = download
         self.check_dataset_consistancy_and_download(path_to_data_folder=root)
         self.root = root
         self.dataset_path = f"{self.root}/Pascal-part"
@@ -168,7 +175,6 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
         self.path_to_images = f"{self.dataset_path}/JPEGImages"
         self.class_to_name = {}
         self.name_to_class = {}
-        self.download = download
 
         with open(f"{self.dataset_path}/classes.txt", "r") as file_with_classes:
             for line in file_with_classes.readlines():
@@ -192,7 +198,7 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
 
     def check_dataset_consistancy_and_download(self, path_to_data_folder: str):
         dataset_path = f"{path_to_data_folder}/Pascal-part"
-        if not os.path.exists(dataset_path):
+        if not os.path.exists(dataset_path) and not self.download:
             raise RuntimeError(
                 "Pascal-part dataset folder is not found.",
                 "You should download it and put it in $ROOT/data folder",
@@ -218,17 +224,23 @@ class AugmentedPascalPartDataset(torch.utils.data.Dataset):
             LOGGER.debug(
                 "Dataset not found, downloading it into $REPOSITORY_ROOT/data folder."
             )
-            os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")
-            gdown.download(
-                "https://drive.google.com/file/d/1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
-                f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
-            )
+
+            if not os.path.exists(f"{source.constants.REPOSITORY_ROOT}/data"):
+                os.mkdir(f"{source.constants.REPOSITORY_ROOT}/data")            
+
+            if not os.path.exists(f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip"):
+                LOGGER.debug("Downloading zipped archive.")
+                gdown.download(
+                    "https://drive.google.com/uc?id=1unIkraozhmsFtkfneZVhw8JMOQ8jv78J",
+                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip",
+                )
+            
             LOGGER.debug("Dataset downloaded. Unzipping it.")
             with zipfile.ZipFile(
                 f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part.zip", "r"
             ) as archive:
                 archive.extractall(
-                    f"{source.constants.REPOSITORY_ROOT}/data/Pascal-part"
+                    f"{source.constants.REPOSITORY_ROOT}/data"
                 )
             LOGGER.debug("Extracting finished.")
 

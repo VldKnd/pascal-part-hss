@@ -31,11 +31,11 @@ ALLOWED_DEVICES = {"cuda", "cpu"}
 ALLOWED_MODELS = {"resnet50", "resnet101", "deeplabv3", "segformer", "resnet101_long"}
 
 MODEL_TO_WEIGHTS_LINKS = {
-    "resnet50": "https://drive.google.com/file/d/16mAgAtS8qdks_XYzuCRAjF7vcBEpWi1H",
-    "resnet101": "https://drive.google.com/file/d/1nt1IRujzH_dowIUMQudwopzgBL708nkO",
-    "deeplabv3": "https://drive.google.com/file/d/1r2i0tAIMzKB0sgNJcAG5zCn6ZMLtKA1s",
-    "segformer": "https://drive.google.com/file/d/1ayjtJxx3zDnTJ97ipwdFzV5YKGwvtkX9",
-    "resnet101_long": "https://drive.google.com/file/d/19f1S7_YUEUQ3LRERXj85S7tjPeoeouGE",
+    "resnet50": "https://drive.google.com/uc?id=16mAgAtS8qdks_XYzuCRAjF7vcBEpWi1H",
+    "resnet101": "https://drive.google.com/uc?id=1nt1IRujzH_dowIUMQudwopzgBL708nkO",
+    "deeplabv3": "https://drive.google.com/uc?id=1r2i0tAIMzKB0sgNJcAG5zCn6ZMLtKA1s",
+    "segformer": "https://drive.google.com/uc?id=1ayjtJxx3zDnTJ97ipwdFzV5YKGwvtkX9",
+    "resnet101_long": "https://drive.google.com/uc?id=19f1S7_YUEUQ3LRERXj85S7tjPeoeouGE",
 }
 
 
@@ -56,7 +56,7 @@ def parse_args() -> dict[str, Any]:
         choices=["resnet50", "resnet101", "deeplabv3", "segformer", "resnet101_long"],
         type=str,
         help="Which pre-trained model to use.",
-        default="reset50",
+        default="resnet50",
     )
 
     parser.add_argument(
@@ -74,11 +74,17 @@ def parse_args() -> dict[str, Any]:
 def validate_args(args_as_dict: dict[str, Any]):
     if args_as_dict.get("device_to_use", "cpu") not in ALLOWED_DEVICES:
         raise ArgumentError(
-            f"device_to_use parameter has to be one of {ALLOWED_DEVICES}"
+            f"device_to_use parameter has to be one of {ALLOWED_DEVICES}. "
+            f"Recieved {args_as_dict.get('device_to_use', 'cpu')}."
         )
 
     if args_as_dict.get("model_type", "resnet101") not in ALLOWED_MODELS:
-        raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
+        raise ArgumentError(
+            (
+                f"model_type parameter has to be one of {ALLOWED_MODELS}. "
+                f"Recieved {args_as_dict.get('model_type', 'resnet101')}."
+            )
+        )
 
 
 def check_and_download_models_weights(model_type: str = "resnet101"):
@@ -98,11 +104,25 @@ def get_model_and_transform(model_type: str = "resnet101"):
     path_to_checkpoint = (
         f"{source.constants.REPOSITORY_ROOT}/" "checkpoints/" f"{model_type}.pth"
     )
-    model_weights = torch.load(path_to_checkpoint)["model"]
-
+    checkpoint_dict = torch.load(path_to_checkpoint)
+    model_weights = checkpoint_dict.get("model", checkpoint_dict)
+    
     if model_type == "resnet50":
         model = torchvision.models.segmentation.fcn_resnet50()
+
+        classifier = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=2048, out_channels=512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(num_features=512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(p=0.1, inplace=False),
+            torch.nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1))
+        )
+
+        model.classifier = classifier
+        model.aux_classifier = None
+
         model.load_state_dict(model_weights)
+
         transforms = torchvision.transforms.Compose(
             [
                 torchvision.transforms.ToPILImage(),
@@ -119,7 +139,18 @@ def get_model_and_transform(model_type: str = "resnet101"):
 
     elif model_type == "resnet101":
         model = torchvision.models.segmentation.fcn_resnet101()
+        classifier = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=2048, out_channels=512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(num_features=512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(p=0.1, inplace=False),
+            torch.nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1))
+        )
+
+        model.classifier = classifier
+        model.aux_classifier = None
         model.load_state_dict(model_weights)
+
         transforms = torchvision.transforms.Compose(
             [
                 torchvision.transforms.ToPILImage(),
@@ -136,7 +167,10 @@ def get_model_and_transform(model_type: str = "resnet101"):
 
     elif model_type == "deeplabv3":
         model = torch.hub.load("pytorch/vision:v0.10.0", "deeplabv3_resnet50")
+        model.classifier[4] = torch.nn.Conv2d(256, 7, kernel_size=(1, 1), stride=(1, 1))
+        model.aux_classifier = None
         model.load_state_dict(model_weights)
+
         transforms = torchvision.transforms.Compose(
             [
                 torchvision.transforms.ToPILImage(),
@@ -155,6 +189,7 @@ def get_model_and_transform(model_type: str = "resnet101"):
         model = transformers.SegformerForSemanticSegmentation.from_pretrained(
             "nvidia/segformer-b2-finetuned-ade-512-512"
         )
+        model.decode_head.classifier = torch.nn.Conv2d(768, 7, kernel_size=(1, 1), stride=(1, 1))
         model.load_state_dict(model_weights)
 
         transforms = torchvision.transforms.Compose(
@@ -173,7 +208,19 @@ def get_model_and_transform(model_type: str = "resnet101"):
 
     elif model_type == "resnet101_long":
         model = torchvision.models.segmentation.fcn_resnet101()
+        classifier = torch.nn.Sequential(
+            torch.nn.Conv2d(in_channels=2048, out_channels=512, kernel_size=(3, 3), stride=(1, 1), padding=(1, 1), bias=False),
+            torch.nn.BatchNorm2d(num_features=512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True),
+            torch.nn.ReLU(),
+            torch.nn.Dropout(p=0.1, inplace=False),
+            torch.nn.Conv2d(512, 7, kernel_size=(1, 1), stride=(1, 1))
+        )
+
+        model.classifier = classifier
+        model.aux_classifier = None
+
         model.load_state_dict(model_weights)
+
         transforms = torchvision.transforms.Compose(
             [
                 torchvision.transforms.ToPILImage(),
@@ -198,10 +245,10 @@ def get_model_logits(
     image_batch: torch.Tensor, model: torch.nn.Sequential
 ) -> torch.Tensor:
     if model_type == "resnet50":
-        logits = model(image_batch)
+        logits = model(image_batch)['out']
 
     elif model_type == "resnet101":
-        logits = model(image_batch)
+        logits = model(image_batch)['out']
 
     elif model_type == "deeplabv3":
         logits = model(image_batch)["out"]
@@ -210,7 +257,7 @@ def get_model_logits(
         logits = model(image_batch).logits
 
     elif model_type == "resnet101_long":
-        logits = model(image_batch)
+        logits = model(image_batch)['out']
 
     else:
         raise ArgumentError(f"model_type parameter has to be one of {ALLOWED_MODELS}")
@@ -246,19 +293,20 @@ if __name__ == "__main__":
             transform=image_transforms,
             train=False,
         )
+        model.to(device)
+
         _ = model.eval()
 
         evaluation_metrics_tracker = {index: [] for index in range(0, 10)}
 
-        for image, mask in tqdm.tqdm(evaluation_dataset):
+        for image, mask in tqdm.tqdm(evaluation_dataset, total=len(evaluation_dataset)):
             image = image.to(device)
             mask = mask.to(device)
 
             mask_shape = mask.shape
             image = image.unsqueeze(0)
             mask = mask.unsqueeze(0)
-
-            output_logits = get_model_logits(image, model).logits
+            output_logits = get_model_logits(image, model)
 
             log_probabilities = torch.nn.functional.log_softmax(
                 output_logits,
@@ -292,7 +340,7 @@ if __name__ == "__main__":
                     )
 
         LOGGER.info(
-            "IoU - ",
+            "".join(["IoU - ",
             *[
                 f"{evaluation_dataset.class_to_name[object_class]} : "
                 + f"{sum(evaluation_metrics_tracker[object_class]) / len(evaluation_metrics_tracker[object_class]):.3f} \t "
@@ -301,4 +349,5 @@ if __name__ == "__main__":
             f"upper_body: {sum(evaluation_metrics_tracker[7]) / len(evaluation_metrics_tracker[7]):.3f} \t ",
             f"lower_body: {sum(evaluation_metrics_tracker[8]) / len(evaluation_metrics_tracker[8]):.3f} \t ",
             f"body: {sum(evaluation_metrics_tracker[9]) / len(evaluation_metrics_tracker[9]):.3f} \t ",
+            ])
         )
